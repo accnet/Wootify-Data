@@ -1,107 +1,125 @@
 #!/bin/bash
-set -e
 
-# Logging colors
+# ========================================================
+# WOOTIFYPANEL - PRODUCTION DEPLOY SCRIPT
+# ========================================================
+
+# 1. CẤU HÌNH URL BẢN RELEASE (Đường dẫn tải file .zip)
+# Bạn có thể truyền URL vào khi chạy: ./deploy.sh https://url-cua-ban.zip
+DEFAULT_URL="https://raw.githubusercontent.com/accnet/WootifyPanel/main/wootify-panel-release.zip"
+RELEASE_URL=${1:-$DEFAULT_URL}
+
+if [ -z "$RELEASE_URL" ]; then
+    echo -e "${RED}Lỗi: Không tìm thấy RELEASE_URL. Vui lòng cấu hình trong script hoặc truyền vào đối số.${NC}"
+    exit 1
+fi
+
+INSTALL_DIR="/opt/wootify-panel"
+TEMP_ZIP="/tmp/wootify-panel-release.zip"
+
+# Màu sắc cho log
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${GREEN}>>> Bắt đầu triển khai WootifyPanel...${NC}"
-
 # Kiểm tra quyền root
 if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}Vui lòng chạy script này dưới quyền root (sudo ./deploy.sh)${NC}"
+  echo -e "${RED}Vui lòng chạy script với quyền root (sudo).${NC}"
   exit 1
 fi
 
-# 1. Cài đặt các thư viện cần thiết (unzip, ufw/firewalld)
-echo -e "${GREEN}[1/5] Đang kiểm tra và cài đặt thư viện cần thiết...${NC}"
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    OS=$ID
-    LIKE=$ID_LIKE
-fi
+echo -e "${GREEN}>>> Bắt đầu quy trình triển khai WootifyPanel Production...${NC}"
 
-IS_DEBIAN=false
-IS_RHEL=false
-
-if [[ "$OS" == "ubuntu" || "$OS" == "debian" || "$LIKE" == *"debian"* ]]; then
-    IS_DEBIAN=true
-    apt-get update -y > /dev/null 2>&1
-    apt-get install -y unzip ufw > /dev/null 2>&1
-elif [[ "$OS" == "centos" || "$OS" == "rhel" || "$OS" == "fedora" || "$OS" == "almalinux" || "$OS" == "rocky" || "$LIKE" == *"rhel"* || "$LIKE" == *"fedora"* ]]; then
-    IS_RHEL=true
-    if command -v dnf &> /dev/null; then
-        dnf install -y unzip firewalld > /dev/null 2>&1
+# 2. Kiểm tra và cài đặt công cụ giải nén
+echo -e "${GREEN}[1/4] Kiểm tra môi trường hệ thống...${NC}"
+if ! command -v unzip &> /dev/null; then
+    echo -e "${YELLOW}Đang cài đặt unzip...${NC}"
+    if command -v apt-get &> /dev/null; then
+        apt-get update && apt-get install -y unzip curl
+    elif command -v dnf &> /dev/null; then
+        dnf install -y unzip curl
     else
-        yum install -y unzip firewalld > /dev/null 2>&1
+        echo -e "${RED}Không thể cài đặt unzip. Vui lòng cài thủ công.${NC}"
+        exit 1
     fi
 fi
 
-# 2. Giải nén file release
-echo -e "${GREEN}[2/5] Đang giải nén wootify-panel-release.zip...${NC}"
-if [ ! -f "wootify-panel-release.zip" ]; then
-    echo -e "${RED}Lỗi: Không tìm thấy file wootify-panel-release.zip trong thư mục hiện tại!${NC}"
+# 3. Tải file release
+echo -e "${GREEN}[2/4] Đang tải bản release từ URL...${NC}"
+echo -e "${YELLOW}URL: $RELEASE_URL${NC}"
+
+# Xóa file cũ nếu có
+rm -f "$TEMP_ZIP"
+
+if command -v curl &> /dev/null; then
+    curl -L "$RELEASE_URL" -o "$TEMP_ZIP"
+elif command -v wget &> /dev/null; then
+    wget -O "$TEMP_ZIP" "$RELEASE_URL"
+else
+    echo -e "${RED}Lỗi: Hệ thống thiếu cả curl và wget. Vui lòng cài đặt ít nhất một công cụ.${NC}"
     exit 1
 fi
 
-INSTALL_DIR="/opt/wootify-panel"
-mkdir -p "$INSTALL_DIR"
-unzip -o wootify-panel-release.zip -d "$INSTALL_DIR" > /dev/null 2>&1
-
-# 3. Phân quyền
-echo -e "${GREEN}[3/5] Đang cấu hình phân quyền...${NC}"
-chmod +x "$INSTALL_DIR/panel"
-chmod -R +x "$INSTALL_DIR/scripts/"
-
-# 4. Mở cổng 8080
-echo -e "${GREEN}[4/5] Đang cấu hình tường lửa (mở cổng 8080, 80, 443)...${NC}"
-if [ "$IS_DEBIAN" = true ]; then
-    ufw allow 8080/tcp > /dev/null 2>&1 || true
-    ufw allow 80/tcp > /dev/null 2>&1 || true
-    ufw allow 443/tcp > /dev/null 2>&1 || true
-    ufw reload > /dev/null 2>&1 || true
-elif [ "$IS_RHEL" = true ]; then
-    systemctl start firewalld || true
-    systemctl enable firewalld || true
-    firewall-cmd --permanent --add-port=8080/tcp > /dev/null 2>&1 || true
-    firewall-cmd --permanent --add-service=http > /dev/null 2>&1 || true
-    firewall-cmd --permanent --add-service=https > /dev/null 2>&1 || true
-    firewall-cmd --reload > /dev/null 2>&1 || true
+if [ ! -f "$TEMP_ZIP" ] || [ ! -s "$TEMP_ZIP" ]; then
+    echo -e "${RED}Lỗi: Không thể tải file từ $RELEASE_URL. Vui lòng kiểm tra lại URL.${NC}"
+    exit 1
 fi
 
-# 5. Thiết lập systemd service chạy ngầm
-echo -e "${GREEN}[5/5] Đang thiết lập Systemd Service (tự khởi động cùng VPS)...${NC}"
-cat > /etc/systemd/system/wootify-panel.service <<SERVICE_EOF
+# 4. Giải nén và thiết lập thư mục
+echo -e "${GREEN}[3/4] Đang giải nén vào $INSTALL_DIR...${NC}"
+mkdir -p "$INSTALL_DIR"
+unzip -o "$TEMP_ZIP" -d "$INSTALL_DIR"
+rm -f "$TEMP_ZIP" # Dọn dẹp sau khi giải nén thành công
+
+cd "$INSTALL_DIR"
+chmod +x panel
+chmod -R +x scripts/
+mkdir -p storage
+chmod 755 storage
+
+# Tạo .env nếu chưa có
+if [ ! -f ".env" ]; then
+    cp .env.example .env || touch .env
+    echo -e "${YELLOW}Đã tạo file .env từ mẫu. Vui lòng cập nhật cấu hình nếu cần.${NC}"
+fi
+
+# 5. Cấu hình Systemd (Triển khai nhanh)
+echo -e "${GREEN}[4/4] Đang thiết lập Systemd Service...${NC}"
+SERVICE_FILE="/etc/systemd/system/wootify-panel.service"
+
+cat > $SERVICE_FILE <<EOF
 [Unit]
-Description=WootifyPanel Dashboard Service
+Description=WootifyPanel - Production
 After=network.target
 
 [Service]
-Type=simple
 User=root
 WorkingDirectory=$INSTALL_DIR
 ExecStart=$INSTALL_DIR/panel
-EnvironmentFile=$INSTALL_DIR/.env
 Restart=always
 RestartSec=5
-# Output logs
-StandardOutput=append:/var/log/wootify_panel.log
-StandardError=append:/var/log/wootify_panel_error.log
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=wootify-panel
 
 [Install]
 WantedBy=multi-user.target
-SERVICE_EOF
+EOF
 
 systemctl daemon-reload
 systemctl enable wootify-panel
 systemctl restart wootify-panel
 
-echo -e "${GREEN}====================================================${NC}"
-echo -e "${GREEN} HOÀN TẤT TRIỂN KHAI!${NC}"
-echo -e "${GREEN} WootifyPanel đang chạy ngầm dưới hệ thống.${NC}"
-echo -e "${GREEN} Truy cập ngay tại: ${YELLOW}http://<IP_CỦA_BẠN>:8080${NC}"
-echo -e "${GREEN} Tài khoản mặc định: admin / CHANGE_ME_STRONG_PASSWORD${NC}"
-echo -e "${GREEN} (Nếu quên mật khẩu, hãy sửa file $INSTALL_DIR/.env rồi khởi động lại: systemctl restart wootify-panel)${NC}"
-echo -e "${GREEN}====================================================${NC}"
+# Lấy IP Public
+IP_ADDRESS=$(curl -s --connect-timeout 2 ifconfig.me || hostname -I | awk '{print $1}')
+
+echo -e "${GREEN}==============================================${NC}"
+echo -e "${GREEN}   TRIỂN KHAI PRODUCTION HOÀN TẤT!   ${NC}"
+echo -e "${GREEN}==============================================${NC}"
+echo -e "Địa chỉ Panel: http://$IP_ADDRESS:8088"
+echo -e "Thư mục cài đặt: $INSTALL_DIR"
+echo -e "Trạng thái Service: systemctl status wootify-panel"
+echo -e "Xem Logs: journalctl -u wootify-panel -f"
+echo -e "${GREEN}==============================================${NC}"
+echo -e "${YELLOW}Lưu ý: Đừng quên mở cổng 8088 trên Firewall của bạn.${NC}"
