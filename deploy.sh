@@ -6,7 +6,7 @@
 
 # 1. CẤU HÌNH URL BẢN RELEASE (Đường dẫn tải file .zip)
 # Bạn có thể truyền URL vào khi chạy: ./deploy.sh https://url-cua-ban.zip
-DEFAULT_URL="https://raw.githubusercontent.com/accnet/WootifyPanel/main/wootify-panel-release.zip"
+DEFAULT_URL="https://raw.githubusercontent.com/accnet/Wootify-Data/main/wootify-panel-release.zip"
 RELEASE_URL=${1:-$DEFAULT_URL}
 
 if [ -z "$RELEASE_URL" ]; then
@@ -117,9 +117,9 @@ IP_ADDRESS=$(curl -s --connect-timeout 2 ifconfig.me || hostname -I | awk '{prin
 echo -e "${GREEN}==============================================${NC}"
 echo -e "${GREEN}   TRIỂN KHAI PRODUCTION HOÀN TẤT!   ${NC}"
 echo -e "${GREEN}==============================================${NC}"
-echo -e "Địa chỉ Panel: http://$IP_ADDRESS:8088"
+echo -e "Địa chỉ Panel: http://$IP_ADDRESS:8080"
 echo -e "Thư mục cài đặt: $INSTALL_DIR"
 echo -e "Trạng thái Service: systemctl status wootify-panel"
 echo -e "Xem Logs: journalctl -u wootify-panel -f"
 echo -e "${GREEN}==============================================${NC}"
-echo -e "${YELLOW}Lưu ý: Đừng quên mở cổng 8088 trên Firewall của bạn.${NC}"
+echo -e "${YELLOW}Lưu ý: Đừng quên mở cổng 8080 trên Firewall của bạn.${NC}"
