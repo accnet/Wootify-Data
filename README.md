@@ -36,7 +36,7 @@ sudo ./deploy.sh
 
 ## 📋 Thông tin quan trọng
 
-*   **Cổng truy cập**: `8088` (Hãy đảm bảo bạn đã mở cổng này trong Firewall/Security Group).
+*   **Cổng truy cập**: `8080` (Hãy đảm bảo bạn đã mở cổng này trong Firewall/Security Group).
 *   **Tài khoản mặc định**: 
     *   User: `admin`
     *   Password: `admin`
