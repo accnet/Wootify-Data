@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Tắt tất cả popup/dialog tương tác khi cài gói trên Ubuntu
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+
 # ========================================================
 # WOOTIFYPANEL - PRODUCTION DEPLOY SCRIPT
 # ========================================================
@@ -36,7 +41,7 @@ echo -e "${GREEN}[1/4] Kiểm tra môi trường hệ thống...${NC}"
 if ! command -v unzip &> /dev/null; then
     echo -e "${YELLOW}Đang cài đặt unzip...${NC}"
     if command -v apt-get &> /dev/null; then
-        apt-get update && apt-get install -y unzip curl
+        apt-get update && apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" unzip curl
     elif command -v dnf &> /dev/null; then
         dnf install -y unzip curl
     else
