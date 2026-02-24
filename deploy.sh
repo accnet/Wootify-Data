@@ -45,6 +45,26 @@ if ! command -v unzip &> /dev/null; then
     fi
 fi
 
+# -------------------------------------------------
+# 2b. Cài đặt và cấu hình firewall (ufw cho Debian/Ubuntu, firewalld cho RHEL)
+if command -v ufw >/dev/null 2>&1; then
+    log "Configuring ufw firewall..."
+    ufw --force enable
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    ufw allow 8080/tcp
+elif command -v firewall-cmd >/dev/null 2>&1; then
+    log "Configuring firewalld..."
+    systemctl enable --now firewalld
+    firewall-cmd --permanent --add-service=http
+    firewall-cmd --permanent --add-service=https
+    firewall-cmd --permanent --add-port=8080/tcp
+    firewall-cmd --reload
+else
+    log "No firewall tool detected. Skipping firewall configuration."
+fi
+# -------------------------------------------------
+
 # 3. Tải file release
 echo -e "${GREEN}[2/4] Đang tải bản release từ URL...${NC}"
 echo -e "${YELLOW}URL: $RELEASE_URL${NC}"
