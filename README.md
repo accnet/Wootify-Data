@@ -7,7 +7,7 @@ Hướng dẫn cài đặt nhanh WootifyPanel cho các hệ điều hành Ubuntu
 Sử dụng lệnh sau để cài đặt nhanh chóng (yêu cầu quyền root):
 
 ```bash
-curl -L https://raw.githubusercontent.com/accnet/Wootify-Data/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && sudo ./deploy.sh
+curl -L https://github.com/accnet/Public/raw/refs/heads/main/deploy.sh -o deploy.sh && chmod +x deploy.sh && sudo ./deploy.sh
 ```
 
 ---
@@ -18,7 +18,7 @@ Nếu bạn muốn thực hiện từng bước hoặc sử dụng bản release
 
 ### Bước 1: Tải Script Deploy
 ```bash
-wget https://raw.githubusercontent.com/accnet/Wootify-Data/main/deploy.sh
+wget https://github.com/accnet/Public/raw/refs/heads/main/deploy.sh
 ```
 
 ### Bước 2: Cấp quyền thực thi
