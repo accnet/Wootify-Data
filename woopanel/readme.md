@@ -11,7 +11,7 @@ Dành cho các hệ điều hành **Ubuntu/Debian** và **RHEL-based** (AlmaLinu
 Sử dụng script cài đặt tự động (yêu cầu quyền root):
 
 ```bash
-curl -L https://github.com/accnet/WooPanel/raw/refs/heads/main/deploy/deploy.sh -o deploy.sh && chmod +x deploy.sh && sudo ./deploy.sh
+curl -L https://github.com/accnet/Public/raw/refs/heads/main/woopanel/deploy.sh -o deploy.sh && chmod +x deploy.sh && sudo ./deploy.sh
 ```
 
 > **Lưu ý:** Script sẽ tự động thiết lập môi trường, tải bản build mới nhất và cấu hình dịch vụ hệ thống.
