@@ -11,7 +11,7 @@ export NEEDRESTART_SUSPEND=1
 
 # 1. CẤU HÌNH URL BẢN RELEASE (Đường dẫn tải file .zip)
 # Bạn có thể truyền URL vào khi chạy: ./deploy.sh https://url-cua-ban.zip
-DEFAULT_URL="https://raw.githubusercontent.com/accnet/Public/main/woopanel/wootify-panel-release.zip"
+DEFAULT_URL="https://github.com/accnet/Public/raw/refs/heads/main/woopanel/wootify-panel-release.zip"
 RELEASE_URL=${1:-$DEFAULT_URL}
 
 if [ -z "$RELEASE_URL" ]; then
