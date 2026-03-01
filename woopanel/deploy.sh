@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Tắt tất cả popup/dialog tương tác khi cài gói trên Ubuntu / rhel
+# Tắt tất cả popup/dialog tương tác khi cài gói trên Ubuntu
 export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a
 export NEEDRESTART_SUSPEND=1
@@ -11,7 +11,7 @@ export NEEDRESTART_SUSPEND=1
 
 # 1. CẤU HÌNH URL BẢN RELEASE (Đường dẫn tải file .zip)
 # Bạn có thể truyền URL vào khi chạy: ./deploy.sh https://url-cua-ban.zip
-DEFAULT_URL="https://github.com/accnet/Public/raw/refs/heads/main/woopanel/wootify-panel-release.zip"
+DEFAULT_URL="https://raw.githubusercontent.com/accnet/WooPanel/main/deploy/wootify-panel-release.zip"
 RELEASE_URL=${1:-$DEFAULT_URL}
 
 if [ -z "$RELEASE_URL" ]; then
@@ -75,20 +75,25 @@ else
 fi
 # -------------------------------------------------
 
-# 3. Tải file release
-echo -e "${GREEN}[2/4] Đang tải bản release từ URL...${NC}"
-echo -e "${YELLOW}URL: $RELEASE_URL${NC}"
+# Tải file release (Xử lý cả URL và Local File)
+echo -e "${GREEN}[2/4] Đang chuẩn bị file release...${NC}"
 
 # Xóa file cũ nếu có
 rm -f "$TEMP_ZIP"
 
-if command -v curl &> /dev/null; then
-    curl -L "$RELEASE_URL" -o "$TEMP_ZIP"
-elif command -v wget &> /dev/null; then
-    wget -O "$TEMP_ZIP" "$RELEASE_URL"
+if [[ "$RELEASE_URL" == http* ]]; then
+    echo -e "${YELLOW}Đang tải từ URL: $RELEASE_URL${NC}"
+    if command -v curl &> /dev/null; then
+        curl -L "$RELEASE_URL" -o "$TEMP_ZIP"
+    elif command -v wget &> /dev/null; then
+        wget -O "$TEMP_ZIP" "$RELEASE_URL"
+    else
+        echo -e "${RED}Lỗi: Hệ thống thiếu cả curl và wget.${NC}"
+        exit 1
+    fi
 else
-    echo -e "${RED}Lỗi: Hệ thống thiếu cả curl và wget. Vui lòng cài đặt ít nhất một công cụ.${NC}"
-    exit 1
+    echo -e "${YELLOW}Sử dụng file local: $RELEASE_URL${NC}"
+    cp "$RELEASE_URL" "$TEMP_ZIP" || { echo -e "${RED}Lỗi: Không thể copy file $RELEASE_URL${NC}"; exit 1; }
 fi
 
 if [ ! -f "$TEMP_ZIP" ] || [ ! -s "$TEMP_ZIP" ]; then
