@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Tắt tất cả popup/dialog tương tác khi cài gói trên Ubuntu
+# Tắt tất cả popup/dialog tương tác khi cài gói trên Ubuntu \\
 export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a
 export NEEDRESTART_SUSPEND=1
